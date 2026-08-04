@@ -1,2 +1,5 @@
 catbot/myvenv/
 catbot/__pycache__/
+catbot/__pycache__/cat_env.cpython-312.pyc
+catbot/__pycache__/training.cpython-312.pyc
+catbot/__pycache__/utility.cpython-312.pyc
