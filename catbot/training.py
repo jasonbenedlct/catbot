@@ -9,11 +9,16 @@ from cat_env import make_env
 # TODO: YOU MAY ADD ADDITIONAL IMPORTS OR FUNCTIONS HERE.                   #
 #############################################################################
 
+def decode_state(state):
+    bot_r = state // 1000
+    bot_c = (state // 100) % 10
+    cat_r = (state // 10) % 10
+    cat_c = state % 10
+    return (bot_r, bot_c), (cat_r, cat_c)
 
-
-
-
-
+def manhattan_distance(pos1, pos2):
+    """Calculates Manhattan distance between two grid cells."""
+    return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 
 #############################################################################
@@ -39,15 +44,12 @@ def train_bot(cat_name, render: int = -1):
     # training process such as learning rate, exploration rate, etc.            #
     #############################################################################
     
-    
-
-
-
-
-
-
-
-
+    alpha = 0.2           # Learning rate
+    gamma = 0.95          # Discount factor
+    epsilon = 1.0         # Exploration rate
+    epsilon_min = 0.01    # Minimum exploration rate
+    epsilon_decay = 0.999 # Decay rate per episode
+    num_actions = env.action_space.n
 
     
     #############################################################################
@@ -67,38 +69,54 @@ def train_bot(cat_name, render: int = -1):
         ############################################################################## 
                
         
+        state, info = env.reset()
+        done = False
 
+        while not done:
+            # 1. Epsilon-Greedy Action Selection
+            if random.random() < epsilon:
+                action = env.action_space.sample()  # Explore
+            else:
+                action = int(np.argmax(q_table[state]))  # Exploit
 
+            # 2. Take action in environment
+            next_state, _, done, truncated, _ = env.step(action)
 
+            # 3. Decode positions for custom reward calculations
+            bot_pos, cat_pos = decode_state(state)
+            next_bot_pos, next_cat_pos = decode_state(next_state)
 
+            prev_dist = manhattan_distance(bot_pos, cat_pos)
+            new_dist = manhattan_distance(next_bot_pos, next_cat_pos)
 
+            # 4. Compute reward manually
+            if done:
+                reward = 100.0  # Successfully caught the cat[cite: 1]
+            else:
+                # Reward getting closer, penalize moving away or idling
+                if new_dist < prev_dist:
+                    reward = 1.0
+                elif new_dist > prev_dist:
+                    reward = -1.5
+                else:
+                    reward = -0.5
+                
+                # Small step penalty to encourage speed
+                reward -= 0.1
 
+            # 5. Update Q-table (Bellman Equation)
+            best_next_action = np.argmax(q_table[next_state])
+            td_target = reward + gamma * q_table[next_state][best_next_action]
+            q_table[state][action] += alpha * (td_target - q_table[state][action])
 
+            state = next_state
+            if done or truncated:
+                break
 
+        # Decay exploration rate over time
+        if epsilon > epsilon_min:
+            epsilon *= epsilon_decay
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-        
         #############################################################################
         # END OF YOUR CODE. DO NOT MODIFY ANYTHING BEYOND THIS LINE.                #
         #############################################################################
