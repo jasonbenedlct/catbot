@@ -44,11 +44,12 @@ def train_bot(cat_name, render: int = -1):
     # training process such as learning rate, exploration rate, etc.            #
     #############################################################################
     
-    alpha = 0.2           # Learning rate
-    gamma = 0.95          # Discount factor
-    epsilon = 1.0         # Exploration rate
-    epsilon_min = 0.01    # Minimum exploration rate
-    epsilon_decay = 0.999 # Decay rate per episode
+    alpha = 0.15                 # Learning rate
+    gamma = 0.95                 # Discount factor
+    epsilon = 1.0                # Exploration rate
+    epsilon_min = 0.01           # Minimum exploration rate
+    epsilon_decay = 0.999        # Decay rate per episode
+    max_steps_per_episode = 100  # Cap steps to prevent infinite training loops
     num_actions = env.action_space.n
 
     
@@ -71,8 +72,11 @@ def train_bot(cat_name, render: int = -1):
         
         state, info = env.reset()
         done = False
+        steps = 0
 
-        while not done:
+        while not done and steps < max_steps_per_episode:
+            steps += 1
+            
             # 1. Epsilon-Greedy Action Selection
             if random.random() < epsilon:
                 action = env.action_space.sample()  # Explore
@@ -93,20 +97,13 @@ def train_bot(cat_name, render: int = -1):
             if done:
                 reward = 100.0  # Successfully caught the cat[cite: 1]
             else:
-                # Reward getting closer, penalize moving away or idling
-                if new_dist < prev_dist:
-                    reward = 1.0
-                elif new_dist > prev_dist:
-                    reward = -1.5
-                else:
-                    reward = -0.5
-                
-                # Small step penalty to encourage speed
-                reward -= 0.1
+                # Optimal policy convergence without penalizing for cat's evasion
+                shaping = gamma * (-new_dist) - (-prev_dist)
+                reward = shaping - 0.1
 
             # 5. Update Q-table (Bellman Equation)
             best_next_action = np.argmax(q_table[next_state])
-            td_target = reward + gamma * q_table[next_state][best_next_action]
+            td_target = reward if done else reward + gamma * q_table[next_state][best_next_action]
             q_table[state][action] += alpha * (td_target - q_table[state][action])
 
             state = next_state
