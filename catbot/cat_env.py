@@ -258,46 +258,25 @@ class TrainerCat(Cat):
     Helper methods:
     - self.player_moved_closer(): Returns True if player's last move decreased distance
     """
-    def __init__(self, grid_size: int, tile_size: int):
-        super().__init__(grid_size, tile_size)
-        self.step_count = 0
+
 
     def _get_sprite_path(self) -> str:
         return "images/trainer-dp.png"
     
     def move(self) -> None:
-        self.step_count += 1
+        if self.last_player_action is None:
+            return
 
-        # Teleport every 5 steps to a tile far from the player
-        if self.step_count % 5 == 0:
-            far_positions = []
-            for r in range(self.grid_size):
-                for c in range(self.grid_size):
-                    dist = abs(r - self.player_pos[0]) + abs(c - self.player_pos[1])
-                    if dist >= 3:
-                        far_positions.append((r, c))
+        # Inverse directions: 0 (Up) -> 1 (Down), 1 (Down) -> 0 (Up)
+        #                     2 (Left) -> 3 (Right), 3 (Right) -> 2 (Left)
+        mirror_moves = {0: (1, 0), 1: (-1, 0), 2: (0, 1), 3: (0, -1)}
+        dr, dc = mirror_moves.get(self.last_player_action, (0, 0))
 
-            if far_positions:
-                new_pos = random.choice(far_positions)
-                self.pos[0], self.pos[1] = new_pos[0], new_pos[1]
-                return
+        new_r = min(max(0, self.pos[0] + dr), self.grid_size - 1)
+        new_c = min(max(0, self.pos[1] + dc), self.grid_size - 1)
 
-        # Otherwise, greedily move to maximize distance from player
-        best_move = (0, 0)
-        best_dist = -1
-        moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        random.shuffle(moves)
-
-        for dr, dc in moves:
-            nr = min(max(0, self.pos[0] + dr), self.grid_size - 1)
-            nc = min(max(0, self.pos[1] + dc), self.grid_size - 1)
-            dist = abs(nr - self.player_pos[0]) + abs(nc - self.player_pos[1])
-
-            if dist > best_dist:
-                best_dist = dist
-                best_move = (nr, nc)
-
-        self.pos[0], self.pos[1] = best_move[0], best_move[1]
+        self.pos[0] = new_r
+        self.pos[1] = new_c
         return
 
 #######################################
