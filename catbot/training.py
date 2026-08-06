@@ -44,11 +44,11 @@ def train_bot(cat_name, render: int = -1):
     # training process such as learning rate, exploration rate, etc.            #
     #############################################################################
     
-    alpha = 0.15                 # Learning rate
-    gamma = 0.95                 # Discount factor
+    alpha = 0.2                 # Learning rate
+    gamma = 0.99                 # Discount factor
     epsilon = 1.0                # Exploration rate
     epsilon_min = 0.01           # Minimum exploration rate
-    epsilon_decay = 0.999        # Decay rate per episode
+    epsilon_decay = 0.9993        # Decay rate per episode
     max_steps_per_episode = 100  # Cap steps to prevent infinite training loops
     num_actions = env.action_space.n
 
@@ -95,7 +95,7 @@ def train_bot(cat_name, render: int = -1):
 
             # 4. Compute reward manually
             if done:
-                reward = 100.0  # Successfully caught the cat[cite: 1]
+                reward = 500.0  # Successfully caught the cat[cite: 1]
             else:
                 # Optimal policy convergence without penalizing for cat's evasion
                 shaping = gamma * (-new_dist) - (-prev_dist)
